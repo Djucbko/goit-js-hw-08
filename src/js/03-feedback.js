@@ -1,41 +1,44 @@
 import throttle from 'lodash.throttle';
 
-const STORAGE_KEY = 'feedback-form-state';
-const formData = {};
-
 const refs = {
-    form: document.querySelector('.feedback-form'),
-    formEmail: document.querySelector('.feedback-form input'),
-    formTextarea: document.querySelector('.feedback-form textarea')
-}
+  form: document.querySelector('.feedback-form'),
+};
 
-refs.formTextarea.required = true;
-refs.formEmail.required = true;
+const STORAGE_KEY = 'feedback-form-state';
 
-refs.form.addEventListener('submit', onFormSubmit);
+const onFormInput = e => {
+  e.preventDefault();
+
+  const email = refs.form.elements.email.value;
+  const message = refs.form.elements.message.value;
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ email, message }));
+};
 refs.form.addEventListener('input', throttle(onFormInput, 500));
 
-populateForm();
+const onLoadFormData = e => {
+  e.preventDefault();
 
-function onFormSubmit(event) {
-    event.preventDefault();
-    console.log(formData);
-    event.currentTarget.reset();
-    localStorage.removeItem(STORAGE_KEY);
-}
+  const getStorageItem = localStorage.getItem(STORAGE_KEY);
+  const onSaveFormData = JSON.parse(getStorageItem) || {
+    email: '',
+    message: '',
+  };
+  const { email, message } = onSaveFormData;
 
-function onFormInput(event) {
-    formData[event.target.name] = event.target.value;
-    const formDataJSON = JSON.stringify(formData);
-    localStorage.setItem(STORAGE_KEY, formDataJSON);
-}
+  refs.form.elements.email.value = email;
+  refs.form.elements.message.value = message;
+};
+window.addEventListener('load', onLoadFormData);
 
-function populateForm() {
-    const savedFormDataJSON = localStorage.getItem(STORAGE_KEY);
-    const savedFormData = JSON.parse(savedFormDataJSON);
+const onFormSubmit = e => {
+  e.preventDefault();
 
-    if (savedFormDataJSON) {
-        refs.formEmail.value = savedFormData.email;
-        refs.formTextarea.value = savedFormData.message;
-    }
-}
+  const { email, message } = refs.form.elements;
+  console.log({ email: email.value, message: message.value });
+
+  localStorage.removeItem(STORAGE_KEY);
+
+  refs.form.reset();
+};
+refs.form.addEventListener('submit', onFormSubmit);
